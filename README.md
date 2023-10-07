@@ -1,5 +1,5 @@
 # BRAWLER
-![BrawlerLogo](https://raw.githubusercontent.com/tamrinotte/infarc/main/app_images/Brawler.png)
+![BrawlerLogo](https://raw.githubusercontent.com/tamrinotte/brawler/main/app_images/Brawler.png)
 
 A command line tool to brute force common web servers.
 
