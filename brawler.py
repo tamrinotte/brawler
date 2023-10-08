@@ -194,6 +194,7 @@ class Brawler:
                 try:
 
                     attempt = self.wp_login_attempt(passwords=passwords, passwd=passwd, password=password)
+
                     debug(attempt)
 
                     if SUCCESS in attempt:
@@ -351,7 +352,7 @@ def main():
     """The function which runs the entire application"""
 
     # Create an argument parser
-    parser = ArgumentParser(description="A command line tool to brute force common web servers.")
+    parser = ArgumentParser(description="A command line tool to brute force common web servers and applications.")
 
     # Add arguments
     parser.add_argument('-v', '--version', action="store_true", help="Display the application's version information",)
